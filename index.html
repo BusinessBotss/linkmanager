@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Manager - Gestión Avanzada de Enlaces</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#000000',
+                        'dark-card': '#1a1a1a',
+                        'dark-border': '#2a2a2a',
+                        'accent-violet': '#8b5cf6',
+                        'accent-violet-hover': '#7c3aed',
+                        'text-primary': '#ffffff',
+                        'text-secondary': '#a1a1aa'
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.2s ease-out',
+                        'pulse-soft': 'pulseSoft 2s infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        /* Animaciones personalizadas */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes pulseSoft {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* Overlay de grano SVG */
+        .grain-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+        }
+        
+        /* Estilos de scroll personalizados */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+        
+        /* Estados de foco mejorados */
+        .focus-ring:focus {
+            outline: 2px solid #8b5cf6;
+            outline-offset: 2px;
+        }
+        
+        /* Efectos de hover suaves */
+        .card-hover {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Animación del botón de búsqueda */
+        .search-pulse {
+            animation: pulseSoft 2s infinite;
+        }
+        
+        /* Estilo para chips de categoría */
+        .category-chip {
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        
+        .category-chip.active {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            border-color: #8b5cf6;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+        
+        .category-chip:not(.active):hover {
+            border-color: #374151;
+            background-color: #262626;
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-text-primary font-sans min-h-screen grain-overlay">
+    <!-- Header Sticky -->
+    <header class="sticky top-0 z-50 bg-dark-bg/95 backdrop-blur-sm border-b border-dark-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo y título -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-accent-violet to-accent-violet-hover rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-bold">Link Manager</h1>
+                </div>
+                
+                <!-- Buscador central -->
+                <div class="flex-1 max-w-2xl mx-8">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-text-secondary search-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            class="block w-full pl-10 pr-12 py-3 border border-dark-border rounded-xl bg-dark-card text-text-primary placeholder-text-secondary focus-ring focus:border-accent-violet transition-colors"
+                            placeholder="Buscar enlaces... (⌘K o Ctrl+K)"
+                            autocomplete="off"
+                            list="searchSuggestions"
+                        >
+                        <datalist id="searchSuggestions">
+                            <!-- Las sugerencias se llenarán dinámicamente -->
+                        </datalist>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <kbd class="inline-flex items-center px-2 py-1 border border-dark-border rounded text-xs text-text-secondary bg-dark-bg">
+                                <span class="sr-only">Atajo de teclado:</span>
+                                ⌘K
+                            </kbd>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CTA Principal -->
+                <button 
+                    id="addLinkBtn"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-accent-violet hover:bg-accent-violet-hover focus-ring transition-colors"
+                >
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Añadir Link
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Filtros de Categoría -->
+        <section class="mb-8" role="region" aria-label="Filtros de categoría">
+            <div class="flex flex-wrap gap-3">
+                <button 
+                    class="category-chip active px-4 py-2 rounded-full text-sm font-medium focus-ring"
+                    data-category="all"
+                    role="tab"
+                    aria-selected="true"
+                >
+                    Todos los enlaces
+                    <span class="ml-2 px-2 py-0.5 bg-white/20 rounded-full text-xs" id="count-all">0</span>
+                </button>
+                <button 
+                    class="category-chip px-4 py-2 rounded-full text-sm font-medium bg-dark-card text-text-secondary focus-ring"
+                    data-category="Webs"
+                    role="tab"
+                    aria-selected="false"
+                >
+                    Webs
+                    <span class="ml-2 px-2 py-0.5 bg-white/10 rounded-full text-xs" id="count-webs">0</span>
+                </button>
+                <button 
+                    class="category-chip px-4 py-2 rounded-full text-sm font-medium bg-dark-card text-text-secondary focus-ring"
+                    data-category="Reservas"
+                    role="tab"
+                    aria-selected="false"
+                >
+                    Reservas
+                    <span class="ml-2 px-2 py-0.5 bg-white/10 rounded-full text-xs" id="count-reservas">0</span>
+                </button>
+                <button 
+                    class="category-chip px-4 py-2 rounded-full text-sm font-medium bg-dark-card text-text-secondary focus-ring"
+                    data-category="Forks"
+                    role="tab"
+                    aria-selected="false"
+                >
+                    Forks
+                    <span class="ml-2 px-2 py-0.5 bg-white/10 rounded-full text-xs" id="count-forks">0</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Grid de Enlaces -->
+        <section class="mb-12" role="region" aria-label="Lista de enlaces">
+            <!-- Estado de carga -->
+            <div id="loadingState" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Skeleton cards -->
+                    <div class="animate-pulse" aria-hidden="true">
+                        <div class="bg-dark-card rounded-xl p-6 space-y-4">
+                            <div class="h-4 bg-gray-600 rounded w-3/4"></div>
+                            <div class="h-3 bg-gray-700 rounded w-1/2"></div>
+                            <div class="h-8 bg-gray-600 rounded w-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Grid principal -->
+            <div 
+                id="linksGrid" 
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                role="grid"
+                aria-live="polite"
+                aria-label="Enlaces disponibles"
+            >
+                <!-- Los enlaces se renderizarán aquí dinámicamente -->
+            </div>
+            
+            <!-- Estado vacío -->
+            <div id="emptyState" class="hidden text-center py-16">
+                <div class="max-w-md mx-auto">
+                    <svg class="mx-auto h-16 w-16 text-text-secondary mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-text-primary mb-2">No se encontraron enlaces</h3>
+                    <p class="text-text-secondary mb-6">Intenta ajustar tu búsqueda o filtros para encontrar lo que buscas.</p>
+                    <button 
+                        id="clearFiltersBtn"
+                        class="inline-flex items-center px-4 py-2 border border-dark-border text-sm font-medium rounded-lg text-text-primary bg-dark-card hover:bg-gray-800 focus-ring transition-colors"
+                    >
+                        Limpiar filtros
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Estadísticas -->
+        <section class="mb-8" role="region" aria-label="Estadísticas">
+            <div class="bg-dark-card rounded-xl p-6 border border-dark-border">
+                <h2 class="text-lg font-semibold mb-4">Estadísticas</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-accent-violet" id="totalLinks">0</div>
+                        <div class="text-sm text-text-secondary">Total Enlaces</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-400" id="totalWebs">0</div>
+                        <div class="text-sm text-text-secondary">Webs</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-400" id="totalReservas">0</div>
+                        <div class="text-sm text-text-secondary">Reservas</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-yellow-400" id="totalForks">0</div>
+                        <div class="text-sm text-text-secondary">Forks</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer con Tips -->
+    <footer class="bg-dark-card border-t border-dark-border mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Tips de uso -->
+                <div>
+                    <h3 class="text-sm font-semibold text-text-primary uppercase tracking-wider mb-4">Tips de Uso</h3>
+                    <ul class="space-y-2 text-sm text-text-secondary">
+                        <li class="flex items-start">
+                            <kbd class="inline-flex items-center px-1.5 py-0.5 border border-dark-border rounded text-xs mr-2 mt-0.5">⌘K</kbd>
+                            Búsqueda rápida desde cualquier lugar
+                        </li>
+                        <li class="flex items-start">
+                            <kbd class="inline-flex items-center px-1.5 py-0.5 border border-dark-border rounded text-xs mr-2 mt-0.5">Esc</kbd>
+                            Limpiar búsqueda y filtros
+                        </li>
+                        <li class="flex items-start">
+                            <kbd class="inline-flex items-center px-1.5 py-0.5 border border-dark-border rounded text-xs mr-2 mt-0.5">↵</kbd>
+                            Abrir primer resultado
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Información -->
+                <div>
+                    <h3 class="text-sm font-semibold text-text-primary uppercase tracking-wider mb-4">Información</h3>
+                    <ul class="space-y-2 text-sm text-text-secondary">
+                        <li>Gestión inteligente de enlaces</li>
+                        <li>Búsqueda instantánea</li>
+                        <li>Organización por categorías</li>
+                        <li>Acceso rápido con teclado</li>
+                    </ul>
+                </div>
+                
+                <!-- Estado del sistema -->
+                <div>
+                    <h3 class="text-sm font-semibold text-text-primary uppercase tracking-wider mb-4">Estado</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                            <span class="text-text-secondary">Sistema operativo</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                            <span class="text-text-secondary">Datos sincronizados</span>
+                        </div>
+                        <div class="text-xs text-text-secondary mt-2">
+                            Última actualización: <span id="lastUpdate">Ahora</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Copyright -->
+            <div class="border-t border-dark-border mt-8 pt-6 text-center">
+                <p class="text-sm text-text-secondary">
+                    © 2024 Link Manager. Diseñado para máxima productividad.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast de notificaciones -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2" aria-live="assertive" aria-atomic="true">
+        <!-- Los toasts se insertarán aquí dinámicamente -->
+    </div>
+
+    <!-- Modal de confirmación -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-black bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-dark-card rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-900 sm:mx-0 sm:h-10 sm:w-10">
+                        <svg class="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-text-primary" id="modal-title">
+                            Confirmar acción
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-text-secondary" id="modal-message">
+                                ¿Estás seguro de que quieres realizar esta acción?
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="confirmBtn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus-ring sm:ml-3 sm:w-auto sm:text-sm">
+                        Confirmar
+                    </button>
+                    <button type="button" id="cancelBtn" class="mt-3 w-full inline-flex justify-center rounded-md border border-dark-border shadow-sm px-4 py-2 bg-dark-bg text-base font-medium text-text-primary hover:bg-gray-900 focus-ring sm:mt-0 sm:w-auto sm:text-sm">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para añadir enlace -->
+    <div id="addLinkModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="add-link-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-black bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-dark-card rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <!-- Header con icono -->
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-accent-violet to-accent-violet-hover rounded-lg flex items-center justify-center mr-4">
+                        <img src="https://res.cloudinary.com/dxhef6dju/image/upload/v1755725396/ChatGPT_Image_Apr_16_2025_12_31_00_AM_pbed1s.png" alt="Add Link" class="w-6 h-6" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <svg class="w-6 h-6 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-text-primary" id="add-link-title">
+                            Añadir Nuevo Enlace
+                        </h3>
+                        <p class="text-sm text-text-secondary">
+                            Completa la información del enlace
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Formulario -->
+                <form id="addLinkForm" class="space-y-4">
+                    <!-- Nombre del enlace -->
+                    <div>
+                        <label for="linkName" class="block text-sm font-medium text-text-primary mb-2">
+                            Nombre del enlace *
+                        </label>
+                        <input 
+                            type="text" 
+                            id="linkName" 
+                            name="name"
+                            class="block w-full px-3 py-2 border border-dark-border rounded-lg bg-dark-bg text-text-primary placeholder-text-secondary focus-ring focus:border-accent-violet transition-colors"
+                            placeholder="Ej: Mi página web"
+                            required
+                            maxlength="50"
+                        >
+                        <p class="mt-1 text-xs text-text-secondary">Máximo 50 caracteres</p>
+                    </div>
+
+                    <!-- URL -->
+                    <div>
+                        <label for="linkUrl" class="block text-sm font-medium text-text-primary mb-2">
+                            URL *
+                        </label>
+                        <input 
+                            type="url" 
+                            id="linkUrl" 
+                            name="url"
+                            class="block w-full px-3 py-2 border border-dark-border rounded-lg bg-dark-bg text-text-primary placeholder-text-secondary focus-ring focus:border-accent-violet transition-colors"
+                            placeholder="https://ejemplo.com"
+                            required
+                        >
+                        <p class="mt-1 text-xs text-text-secondary">Debe incluir http:// o https://</p>
+                    </div>
+
+                    <!-- Categoría -->
+                    <div>
+                        <label for="linkCategory" class="block text-sm font-medium text-text-primary mb-2">
+                            Categoría *
+                        </label>
+                        <select 
+                            id="linkCategory" 
+                            name="category"
+                            class="block w-full px-3 py-2 border border-dark-border rounded-lg bg-dark-bg text-text-primary focus-ring focus:border-accent-violet transition-colors"
+                            required
+                        >
+                            <option value="">Selecciona una categoría</option>
+                            <option value="Webs">Webs</option>
+                            <option value="Reservas">Reservas</option>
+                            <option value="Forks">Forks</option>
+                        </select>
+                    </div>
+
+                    <!-- Vista previa de URL -->
+                    <div id="urlPreview" class="hidden">
+                        <label class="block text-sm font-medium text-text-primary mb-2">
+                            Vista previa
+                        </label>
+                        <div class="bg-dark-bg border border-dark-border rounded-lg p-3">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-4 h-4 bg-green-400 rounded-full flex-shrink-0"></div>
+                                <span class="text-sm text-text-secondary font-mono truncate" id="previewUrl"></span>
+                            </div>
+                            <p class="text-xs text-text-secondary mt-1" id="previewDomain"></p>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="flex space-x-3 pt-4">
+                        <button 
+                            type="button" 
+                            id="cancelAddLink"
+                            class="flex-1 inline-flex justify-center px-4 py-2 border border-dark-border text-sm font-medium rounded-lg text-text-primary bg-dark-bg hover:bg-gray-800 focus-ring transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            type="submit" 
+                            id="saveLink"
+                            class="flex-1 inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-accent-violet hover:bg-accent-violet-hover focus-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Añadir Enlace
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * LINK MANAGER - Sistema de Gestión de Enlaces
+         * Arquitectura modular con JavaScript vanilla
+         * Versión: 1.0.0
+         */
+
+        // ============================================================================
+        // CONFIGURACIÓN Y CONSTANTES GLOBALES
+        // ============================================================================
+        
+        const CONFIG = {
+            STORAGE_KEYS: {
+                SEARCH_QUERY: 'linkManager_searchQuery',
+                ACTIVE_CATEGORY: 'linkManager_activeCategory',
+                LINKS_DATA: 'linkManager_linksData'
+            },
+            CATEGORIES: ['all', 'Webs', 'Reservas', 'Forks'],
+            KEYBOARD_SHORTCUTS: {
+                SEARCH: ['KeyK'],
+                ESCAPE: ['Escape'],
+                ENTER: ['Enter']
+            },
+            ANIMATION_DURATION: 300,
+            TOAST_DURATION: 3000,
+            URL_TRUNCATE_LENGTH: 40
+        };
+
+        // ============================================================================
+        // DATOS - Array de enlaces (inicialmente vacío para la fase 1)
+        // ============================================================================
+        
+        let LINKS = [
+            // 🌐 Webs y Landing Pages
+            { name: 'sandractive', url: 'https://businessbotss.github.io/sandractive/', cat: 'Webs' },
+            { name: 'sandra.active', url: 'https://businessbotss.github.io/sandra.active/', cat: 'Webs' },
+            { name: 'businessbotshome', url: 'https://businessbotss.github.io/businessbotshome/', cat: 'Webs' },
+            { name: 'businessbots.landing', url: 'https://businessbotss.github.io/businessbots.landing/', cat: 'Webs' },
+            { name: 'bubobeachclubhome', url: 'https://businessbotss.github.io/bubobeachclubhome/', cat: 'Webs' },
+            { name: 'bubobeach', url: 'https://businessbotss.github.io/bubobeach/', cat: 'Webs' },
+            { name: 'asiaproposal', url: 'https://businessbotss.github.io/asiaproposal/', cat: 'Webs' },
+            { name: 'grupoasia', url: 'https://businessbotss.github.io/grupoasia/', cat: 'Webs' },
+            { name: 'close-clients', url: 'https://businessbotss.github.io/close-clients/', cat: 'Webs' },
+            { name: 'ticketandfaqs', url: 'https://businessbotss.github.io/ticketandfaqs/', cat: 'Webs' },
+            { name: 'prolink-nfc', url: 'https://businessbotss.github.io/prolink-nfc/', cat: 'Webs' },
+            { name: 'charterspage', url: 'https://businessbotss.github.io/charterspage/', cat: 'Webs' },
+            { name: 'expressbudget', url: 'https://businessbotss.github.io/expressbudget/', cat: 'Webs' },
+            { name: 'botanikmemberships', url: 'https://businessbotss.github.io/botanikmemberships/', cat: 'Webs' },
+            { name: 'BOTANIK1923', url: 'https://businessbotss.github.io/BOTANIK1923/', cat: 'Webs' },
+            { name: 'contactmelink', url: 'https://businessbotss.github.io/contactmelink/', cat: 'Webs' },
+            { name: 'cashcash', url: 'https://businessbotss.github.io/cashcash/', cat: 'Webs' },
+            { name: 'CosmicFarm2025', url: 'https://businessbotss.github.io/CosmicFarm2025/', cat: 'Webs' },
+            { name: 'massimordering', url: 'https://businessbotss.github.io/massimordering/', cat: 'Webs' },
+            { name: 'Wheresmychoffer', url: 'https://businessbotss.github.io/Wheresmychoffer/', cat: 'Webs' },
+            
+            // 📅 Calendario y Reservas
+            { name: 'businessbotscalendar', url: 'https://businessbotss.github.io/businessbotscalendar/', cat: 'Reservas' },
+            { name: 'dental-booking-2025', url: 'https://businessbotss.github.io/dental-booking-2025/', cat: 'Reservas' },
+            { name: 'bookabarber', url: 'https://businessbotss.github.io/bookabarber/', cat: 'Reservas' },
+            { name: 'barber-reservas-widget', url: 'https://businessbotss.github.io/barber-reservas-widget/', cat: 'Reservas' },
+            
+            // 📚 Forks / Ejemplos
+            { name: 'html-samples', url: 'https://businessbotss.github.io/html-samples/', cat: 'Forks' },
+            { name: 'express-backend-sample', url: 'https://businessbotss.github.io/express-backend-sample/', cat: 'Forks' }
+        ];
+
+        // ============================================================================
+        // ESTADO GLOBAL DE LA APLICACIÓN
+        // ============================================================================
+        
+        const AppState = {
+            // Estado de búsqueda y filtros
+            searchQuery: '',
+            activeCategory: 'all',
+            filteredLinks: [],
+            
+            // Referencias DOM cacheadas
+            elements: {},
+            
+            // Estado de la interfaz
+            isLoading: false,
+            
+            // Inicialización del estado
+            init() {
+                this.loadFromStorage();
+                this.cacheElements();
+                this.filteredLinks = [...LINKS];
+            },
+            
+            // Persistencia en localStorage
+            loadFromStorage() {
+                this.searchQuery = localStorage.getItem(CONFIG.STORAGE_KEYS.SEARCH_QUERY) || '';
+                this.activeCategory = localStorage.getItem(CONFIG.STORAGE_KEYS.ACTIVE_CATEGORY) || 'all';
+            },
+            
+            saveToStorage() {
+                localStorage.setItem(CONFIG.STORAGE_KEYS.SEARCH_QUERY, this.searchQuery);
+                localStorage.setItem(CONFIG.STORAGE_KEYS.ACTIVE_CATEGORY, this.activeCategory);
+            },
+            
+            // Cache de elementos DOM para optimización
+            cacheElements() {
+                this.elements = {
+                    searchInput: document.getElementById('searchInput'),
+                    linksGrid: document.getElementById('linksGrid'),
+                    loadingState: document.getElementById('loadingState'),
+                    emptyState: document.getElementById('emptyState'),
+                    categoryButtons: document.querySelectorAll('[data-category]'),
+                    addLinkBtn: document.getElementById('addLinkBtn'),
+                    clearFiltersBtn: document.getElementById('clearFiltersBtn'),
+                    toastContainer: document.getElementById('toastContainer'),
+                    confirmModal: document.getElementById('confirmModal'),
+                    confirmBtn: document.getElementById('confirmBtn'),
+                    cancelBtn: document.getElementById('cancelBtn'),
+                    // Modal de añadir enlace
+                    addLinkModal: document.getElementById('addLinkModal'),
+                    addLinkForm: document.getElementById('addLinkForm'),
+                    linkName: document.getElementById('linkName'),
+                    linkUrl: document.getElementById('linkUrl'),
+                    linkCategory: document.getElementById('linkCategory'),
+                    cancelAddLink: document.getElementById('cancelAddLink'),
+                    saveLink: document.getElementById('saveLink'),
+                    urlPreview: document.getElementById('urlPreview'),
+                    previewUrl: document.getElementById('previewUrl'),
+                    previewDomain: document.getElementById('previewDomain'),
+                    // Contadores de estadísticas
+                    totalLinks: document.getElementById('totalLinks'),
+                    totalWebs: document.getElementById('totalWebs'),
+                    totalReservas: document.getElementById('totalReservas'),
+                    totalForks: document.getElementById('totalForks'),
+                    lastUpdate: document.getElementById('lastUpdate')
+                };
+            }
+        };
+
+        // ============================================================================
+        // UTILIDADES Y HELPERS
+        // ============================================================================
+        
+        const Utils = {
+            // Sanitización de strings para prevenir XSS
+            sanitizeString(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            },
+            
+            // Truncar URLs largas
+            truncateUrl(url, maxLength = CONFIG.URL_TRUNCATE_LENGTH) {
+                if (url.length <= maxLength) return url;
+                return url.substring(0, maxLength - 3) + '...';
+            },
+            
+            // Extraer dominio de URL
+            extractDomain(url) {
+                try {
+                    return new URL(url).hostname.replace('www.', '');
+                } catch {
+                    return url;
+                }
+            },
+            
+            // Debounce para optimizar búsquedas
+            debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            },
+            
+            // Generar ID único
+            generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2);
+            },
+            
+            // Validar URL
+            isValidUrl(string) {
+                try {
+                    new URL(string);
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            },
+            
+            // Verificar si un enlace está activo
+            async checkLinkStatus(url) {
+                try {
+                    const response = await fetch(url, { 
+                        method: 'HEAD', 
+                        mode: 'no-cors',
+                        cache: 'no-cache'
+                    });
+                    return { status: 'active', code: response.status };
+                } catch (error) {
+                    return { status: 'unknown', error: error.message };
+                }
+            },
+            
+            // Formatear fecha
+            formatDate(date = new Date()) {
+                return date.toLocaleString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+        };
+
+        // ============================================================================
+        // SISTEMA DE FILTRADO Y BÚSQUEDA
+        // ============================================================================
+        
+        const FilterSystem = {
+            // Aplicar filtros combinados (búsqueda + categoría)
+            applyFilters() {
+                let filtered = [...LINKS];
+                
+                // Filtro por categoría
+                if (AppState.activeCategory !== 'all') {
+                    filtered = filtered.filter(link => link.cat === AppState.activeCategory);
+                }
+                
+                // Filtro por búsqueda (nombre y URL)
+                if (AppState.searchQuery.trim()) {
+                    const query = AppState.searchQuery.toLowerCase().trim();
+                    filtered = filtered.filter(link => 
+                        link.name.toLowerCase().includes(query) ||
+                        link.url.toLowerCase().includes(query) ||
+                        link.cat.toLowerCase().includes(query)
+                    );
+                }
+                
+                AppState.filteredLinks = filtered;
+                this.updateUI();
+            },
+            
+            // Actualizar interfaz después del filtrado
+            updateUI() {
+                RenderSystem.renderGrid();
+                this.updateCategoryCounts();
+                StatsSystem.updateStats();
+                AppState.saveToStorage();
+            },
+            
+            // Actualizar contadores en chips de categoría
+            updateCategoryCounts() {
+                const counts = this.getCategoryCounts();
+                
+                document.getElementById('count-all').textContent = LINKS.length;
+                document.getElementById('count-webs').textContent = counts.Webs || 0;
+                document.getElementById('count-reservas').textContent = counts.Reservas || 0;
+                document.getElementById('count-forks').textContent = counts.Forks || 0;
+            },
+            
+            // Calcular contadores por categoría
+            getCategoryCounts() {
+                return LINKS.reduce((acc, link) => {
+                    acc[link.cat] = (acc[link.cat] || 0) + 1;
+                    return acc;
+                }, {});
+            },
+            
+            // Limpiar todos los filtros
+            clearFilters() {
+                AppState.searchQuery = '';
+                AppState.activeCategory = 'all';
+                AppState.elements.searchInput.value = '';
+                
+                // Actualizar UI de categorías
+                AppState.elements.categoryButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-selected', 'false');
+                    if (btn.dataset.category === 'all') {
+                        btn.classList.add('active');
+                        btn.setAttribute('aria-selected', 'true');
+                    }
+                });
+                
+                this.applyFilters();
+                ToastSystem.show('Filtros limpiados', 'success');
+            }
+        };
+
+        // ============================================================================
+        // SISTEMA DE RENDERIZADO
+        // ============================================================================
+        
+        const RenderSystem = {
+            // Renderizar grid principal de enlaces
+            renderGrid() {
+                const grid = AppState.elements.linksGrid;
+                const emptyState = AppState.elements.emptyState;
+                
+                // Mostrar estado vacío si no hay resultados
+                if (AppState.filteredLinks.length === 0) {
+                    grid.innerHTML = '';
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+                
+                // Ocultar estado vacío
+                emptyState.classList.add('hidden');
+                
+                // Renderizar enlaces usando DocumentFragment para optimización
+                const fragment = document.createDocumentFragment();
+                
+                AppState.filteredLinks.forEach((link, index) => {
+                    const card = this.createLinkCard(link, index);
+                    fragment.appendChild(card);
+                });
+                
+                // Actualizar DOM de una vez
+                grid.innerHTML = '';
+                grid.appendChild(fragment);
+                
+                // Animar entrada de cards
+                this.animateCardsEntrance();
+            },
+            
+            // Crear card individual de enlace
+            createLinkCard(link, index) {
+                const card = document.createElement('div');
+                card.className = 'card-hover bg-dark-card rounded-xl p-6 border border-dark-border animate-fade-in';
+                card.style.animationDelay = `${index * 50}ms`;
+                card.setAttribute('role', 'gridcell');
+                card.setAttribute('tabindex', '0');
+                
+                // Datos sanitizados
+                const safeName = Utils.sanitizeString(link.name);
+                const safeUrl = Utils.sanitizeString(link.url);
+                const safeCat = Utils.sanitizeString(link.cat);
+                const truncatedUrl = Utils.truncateUrl(safeUrl);
+                const domain = Utils.extractDomain(safeUrl);
+                
+                // Color de categoría
+                const categoryColors = {
+                    'Webs': 'bg-blue-500',
+                    'Reservas': 'bg-green-500',
+                    'Forks': 'bg-yellow-500'
+                };
+                
+                card.innerHTML = `
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-semibold text-text-primary truncate mb-1" title="${safeName}">
+                                ${safeName}
+                            </h3>
+                            <div class="flex items-center space-x-2">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${categoryColors[link.cat] || 'bg-gray-500'} text-white">
+                                    ${safeCat}
+                                </span>
+                                <span class="text-xs text-text-secondary" title="${safeUrl}">
+                                    ${domain}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="text-sm text-text-secondary font-mono bg-dark-bg rounded px-3 py-2 truncate" title="${safeUrl}">
+                            ${truncatedUrl}
+                        </p>
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <button 
+                            class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-dark-border text-sm font-medium rounded-lg text-text-primary bg-dark-bg hover:bg-gray-800 focus-ring transition-colors copy-btn"
+                            data-url="${safeUrl}"
+                            title="Copiar enlace"
+                        >
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                            Copiar
+                        </button>
+                        <button 
+                            class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-accent-violet hover:bg-accent-violet-hover focus-ring transition-colors open-btn"
+                            data-url="${safeUrl}"
+                            data-name="${safeName}"
+                            title="Abrir enlace"
+                        >
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            Abrir
+                        </button>
+                    </div>
+                `;
+                
+                return card;
+            },
+            
+            // Animar entrada de cards
+            animateCardsEntrance() {
+                const cards = AppState.elements.linksGrid.querySelectorAll('.card-hover');
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.add('animate-slide-up');
+                    }, index * 50);
+                });
+            }
+        };
+
+        // ============================================================================
+        // SISTEMA DE ESTADÍSTICAS
+        // ============================================================================
+        
+        const StatsSystem = {
+            // Actualizar todas las estadísticas
+            updateStats() {
+                const counts = FilterSystem.getCategoryCounts();
+                
+                AppState.elements.totalLinks.textContent = LINKS.length;
+                AppState.elements.totalWebs.textContent = counts.Webs || 0;
+                AppState.elements.totalReservas.textContent = counts.Reservas || 0;
+                AppState.elements.totalForks.textContent = counts.Forks || 0;
+                AppState.elements.lastUpdate.textContent = Utils.formatDate();
+            }
+        };
+
+        // ============================================================================
+        // SISTEMA DE CLIPBOARD
+        // ============================================================================
+        
+        const ClipboardSystem = {
+            // Copiar texto al clipboard con manejo de errores
+            async copyToClipboard(text) {
+                try {
+                    // Método moderno (Clipboard API)
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(text);
+                        return true;
+                    }
+                    
+                    // Fallback para navegadores antiguos
+                    return this.fallbackCopyToClipboard(text);
+                } catch (error) {
+                    console.error('Error al copiar:', error);
+                    return false;
+                }
+            },
+            
+            // Método fallback para copiar
+            fallbackCopyToClipboard(text) {
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    return successful;
+                } catch (error) {
+                    console.error('Fallback copy failed:', error);
+                    return false;
+                }
+            }
+        };
+
+        // ============================================================================
+        // SISTEMA DE TOASTS/NOTIFICACIONES
+        // ============================================================================
+        
+        const ToastSystem = {
+            // Mostrar toast con diferentes tipos
+            show(message, type = 'info', duration = CONFIG.TOAST_DURATION) {
+                const toast = this.createToast(message, type);
+                AppState.elements.toastContainer.appendChild(toast);
+                
+                // Animar entrada
+                setTimeout(() => toast.classList.add('animate-slide-up'), 10);
+                
+                // Auto-remover
+                setTimeout(() => this.remove(toast), duration);
+                
+                return toast;
+            },
+            
+            // Crear elemento toast
+            createToast(message, type) {
+                const toast = document.createElement('div');
+                toast.className = `max-w-sm w-full bg-dark-card shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 translate-y-2 opacity-0`;
+                
+                const icons = {
+                    success: `<svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>`,
+                    error: `<svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>`,
+                    info: `<svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>`
+                };
+                
+                toast.innerHTML = `
+                    <div class="p-4">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                ${icons[type] || icons.info}
+                            </div>
+                            <div class="ml-3 w-0 flex-1 pt-0.5">
+                                <p class="text-sm font-medium text-text-primary">${Utils.sanitizeString(message)}</p>
+                            </div>
+                            <div class="ml-4 flex-shrink-0 flex">
+                                <button class="bg-dark-card rounded-md inline-flex text-text-secondary hover:text-text-primary focus-ring" onclick="ToastSystem.remove(this.closest('.max-w-sm'))">
+                                    <span class="sr-only">Cerrar</span>
+                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                return toast;
+            },
+            
+            // Remover toast con animación
+            remove(toast) {
+                if (!toast || !toast.parentNode) return;
+                
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }
+        };
+
+        // ============================================================================
+        // SISTEMA DE GESTIÓN DE ENLACES
+        // ============================================================================
+        
+        const LinkManager = {
+            // Añadir nuevo enlace
+            addLink(linkData) {
+                // Validar datos
+                if (!this.validateLinkData(linkData)) {
+                    return { success: false, error: 'Datos inválidos' };
+                }
+                
+                // Verificar duplicados
+                const isDuplicate = LINKS.some(link => 
+                    link.url.toLowerCase() === linkData.url.toLowerCase() ||
+                    link.name.toLowerCase() === linkData.name.toLowerCase()
+                );
+                
+                if (isDuplicate) {
+                    return { success: false, error: 'Ya existe un enlace con ese nombre o URL' };
+                }
+                
+                // Crear nuevo enlace
+                const newLink = {
+                    name: linkData.name.trim(),
+                    url: linkData.url.trim(),
+                    cat: linkData.category,
+                    id: Utils.generateId(),
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Añadir al array
+                LINKS.unshift(newLink); // Añadir al principio
+                
+                // Actualizar UI
+                FilterSystem.applyFilters();
+                
+                // Guardar en localStorage
+                this.saveToStorage();
+                
+                return { success: true, link: newLink };
+            },
+            
+            // Validar datos del enlace
+            validateLinkData(data) {
+                if (!data || typeof data !== 'object') return false;
+                
+                // Validar nombre
+                if (!data.name || typeof data.name !== 'string' || !data.name.trim()) {
+                    return false;
+                }
+                
+                if (data.name.trim().length > 50) {
+                    return false;
+                }
+                
+                // Validar URL
+                if (!data.url || typeof data.url !== 'string' || !Utils.isValidUrl(data.url)) {
+                    return false;
+                }
+                
+                // Validar categoría
+                const validCategories = ['Webs', 'Reservas', 'Forks'];
+                if (!data.category || !validCategories.includes(data.category)) {
+                    return false;
+                }
+                
+                return true;
+            },
+            
+            // Eliminar enlace
+            removeLink(linkId) {
+                const index = LINKS.findIndex(link => link.id === linkId);
+                if (index === -1) return false;
+                
+                LINKS.splice(index, 1);
+                FilterSystem.applyFilters();
+                this.saveToStorage();
+                return true;
+            },
+            
+            // Guardar en localStorage
+            saveToStorage() {
+                try {
+                    localStorage.setItem(CONFIG.STORAGE_KEYS.LINKS_DATA, JSON.stringify(LINKS));
+                } catch (error) {
+                    console.error('Error al guardar enlaces:', error);
+                }
+            },
+            
+            // Cargar desde localStorage
+            loadFromStorage() {
+                try {
+                    const saved = localStorage.getItem(CONFIG.STORAGE_KEYS.LINKS_DATA);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (Array.isArray(parsed)) {
+                            // Combinar enlaces guardados con los predeterminados
+                            const savedLinks = parsed.filter(link => link.id); // Solo enlaces con ID (creados por usuario)
+                            const defaultLinks = LINKS.filter(link => !link.id); // Enlaces predeterminados
+                            LINKS.length = 0;
+                            LINKS.push(...savedLinks, ...defaultLinks);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error al cargar enlaces:', error);
+                }
+            }
+        };
+
+        // ============================================================================
+        // SISTEMA DE EVENTOS
+        // ============================================================================
+        
+        const EventSystem = {
+            // Inicializar todos los event listeners
+            init() {
+                this.setupSearchEvents();
+                this.setupCategoryEvents();
+                this.setupKeyboardEvents();
+                this.setupGridEvents();
+                this.setupModalEvents();
+                this.setupButtonEvents();
+                this.setupAddLinkEvents();
+            },
+            
+            // Eventos de búsqueda
+            setupSearchEvents() {
+                const debouncedSearch = Utils.debounce((query) => {
+                    AppState.searchQuery = query;
+                    FilterSystem.applyFilters();
+                }, 300);
+                
+                AppState.elements.searchInput.addEventListener('input', (e) => {
+                    debouncedSearch(e.target.value);
+                });
+                
+                AppState.elements.searchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && AppState.filteredLinks.length > 0) {
+                        e.preventDefault();
+                        this.openFirstResult();
+                    }
+                });
+            },
+            
+            // Eventos de categorías
+            setupCategoryEvents() {
+                AppState.elements.categoryButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const category = e.target.dataset.category;
+                        this.setActiveCategory(category);
+                    });
+                });
+            },
+            
+            // Atajos de teclado globales
+            setupKeyboardEvents() {
+                document.addEventListener('keydown', (e) => {
+                    // Búsqueda rápida (Cmd/Ctrl + K)
+                    if ((e.metaKey || e.ctrlKey) && e.code === 'KeyK') {
+                        e.preventDefault();
+                        AppState.elements.searchInput.focus();
+                        AppState.elements.searchInput.select();
+                    }
+                    
+                    // Limpiar filtros (Escape)
+                    if (e.code === 'Escape') {
+                        if (AppState.elements.searchInput === document.activeElement) {
+                            AppState.elements.searchInput.blur();
+                        }
+                        if (AppState.searchQuery || AppState.activeCategory !== 'all') {
+                            FilterSystem.clearFilters();
+                        }
+                    }
+                });
+            },
+            
+            // Eventos del grid (delegación de eventos)
+            setupGridEvents() {
+                AppState.elements.linksGrid.addEventListener('click', async (e) => {
+                    const button = e.target.closest('button');
+                    if (!button) return;
+                    
+                    if (button.classList.contains('copy-btn')) {
+                        await this.handleCopyClick(button);
+                    } else if (button.classList.contains('open-btn')) {
+                        this.handleOpenClick(button);
+                    }
+                });
+                
+                // Navegación con teclado en el grid
+                AppState.elements.linksGrid.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        const card = e.target.closest('[role="gridcell"]');
+                        if (card) {
+                            e.preventDefault();
+                            const openBtn = card.querySelector('.open-btn');
+                            if (openBtn) openBtn.click();
+                        }
+                    }
+                });
+            },
+            
+            // Eventos de modales
+            setupModalEvents() {
+                AppState.elements.cancelBtn.addEventListener('click', () => {
+                    this.hideModal();
+                });
+                
+                // Cerrar modal al hacer clic fuera
+                AppState.elements.confirmModal.addEventListener('click', (e) => {
+                    if (e.target === AppState.elements.confirmModal) {
+                        this.hideModal();
+                    }
+                });
+            },
+            
+            // Eventos de botones principales
+            setupButtonEvents() {
+                AppState.elements.addLinkBtn.addEventListener('click', () => {
+                    this.showAddLinkModal();
+                });
+                
+                AppState.elements.clearFiltersBtn.addEventListener('click', () => {
+                    FilterSystem.clearFilters();
+                });
+            },
+            
+            // Eventos del modal de añadir enlace
+            setupAddLinkEvents() {
+                // Botón cancelar
+                AppState.elements.cancelAddLink.addEventListener('click', () => {
+                    this.hideAddLinkModal();
+                });
+                
+                // Cerrar modal al hacer clic fuera
+                AppState.elements.addLinkModal.addEventListener('click', (e) => {
+                    if (e.target === AppState.elements.addLinkModal) {
+                        this.hideAddLinkModal();
+                    }
+                });
+                
+                // Envío del formulario
+                AppState.elements.addLinkForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleAddLinkSubmit();
+                });
+                
+                // Vista previa de URL
+                AppState.elements.linkUrl.addEventListener('input', (e) => {
+                    this.updateUrlPreview(e.target.value);
+                });
+                
+                // Validación en tiempo real
+                AppState.elements.linkName.addEventListener('input', () => {
+                    this.validateForm();
+                });
+                
+                AppState.elements.linkCategory.addEventListener('change', () => {
+                    this.validateForm();
+                });
+                
+                // Escape para cerrar modal
+                AppState.elements.addLinkModal.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.hideAddLinkModal();
+                    }
+                });
+            },
+            
+            // Manejar clic en copiar
+            async handleCopyClick(button) {
+                const url = button.dataset.url;
+                const success = await ClipboardSystem.copyToClipboard(url);
+                
+                if (success) {
+                    ToastSystem.show('Enlace copiado al portapapeles', 'success');
+                    
+                    // Feedback visual temporal
+                    const originalText = button.innerHTML;
+                    button.innerHTML = `
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Copiado
+                    `;
+                    button.classList.add('bg-green-600', 'text-white');
+                    
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.classList.remove('bg-green-600', 'text-white');
+                    }, 1500);
+                } else {
+                    ToastSystem.show('Error al copiar el enlace', 'error');
+                }
+            },
+            
+            // Manejar clic en abrir
+            handleOpenClick(button) {
+                const url = button.dataset.url;
+                const name = button.dataset.name;
+                
+                try {
+                    // Abrir en nueva pestaña con seguridad
+                    const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+                    
+                    if (newWindow) {
+                        ToastSystem.show(`Abriendo ${name}...`, 'success');
+                    } else {
+                        // Fallback si el popup fue bloqueado
+                        ToastSystem.show('Popup bloqueado. Copiando enlace...', 'info');
+                        ClipboardSystem.copyToClipboard(url);
+                    }
+                } catch (error) {
+                    console.error('Error al abrir enlace:', error);
+                    ToastSystem.show('Error al abrir el enlace', 'error');
+                }
+            },
+            
+            // Abrir primer resultado de búsqueda
+            openFirstResult() {
+                const firstCard = AppState.elements.linksGrid.querySelector('.open-btn');
+                if (firstCard) {
+                    firstCard.click();
+                }
+            },
+            
+            // Cambiar categoría activa
+            setActiveCategory(category) {
+                AppState.activeCategory = category;
+                
+                // Actualizar UI de botones
+                AppState.elements.categoryButtons.forEach(btn => {
+                    const isActive = btn.dataset.category === category;
+                    btn.classList.toggle('active', isActive);
+                    btn.setAttribute('aria-selected', isActive);
+                });
+                
+                FilterSystem.applyFilters();
+            },
+            
+            // Mostrar modal de confirmación
+            showModal(title, message, onConfirm) {
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-message').textContent = message;
+                
+                AppState.elements.confirmModal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+                
+                // Configurar callback de confirmación
+                AppState.elements.confirmBtn.onclick = () => {
+                    onConfirm();
+                    this.hideModal();
+                };
+                
+                // Foco en el botón de cancelar por defecto
+                AppState.elements.cancelBtn.focus();
+            },
+            
+            // Ocultar modal
+            hideModal() {
+                AppState.elements.confirmModal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                AppState.elements.confirmBtn.onclick = null;
+            },
+            
+            // Mostrar modal de añadir enlace
+            showAddLinkModal() {
+                // Limpiar formulario
+                AppState.elements.addLinkForm.reset();
+                AppState.elements.urlPreview.classList.add('hidden');
+                
+                // Mostrar modal
+                AppState.elements.addLinkModal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+                
+                // Foco en el primer campo
+                setTimeout(() => {
+                    AppState.elements.linkName.focus();
+                }, 100);
+                
+                this.validateForm();
+            },
+            
+            // Ocultar modal de añadir enlace
+            hideAddLinkModal() {
+                AppState.elements.addLinkModal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            },
+            
+            // Manejar envío del formulario
+            handleAddLinkSubmit() {
+                const formData = new FormData(AppState.elements.addLinkForm);
+                const linkData = {
+                    name: formData.get('name'),
+                    url: formData.get('url'),
+                    category: formData.get('category')
+                };
+                
+                // Deshabilitar botón mientras se procesa
+                AppState.elements.saveLink.disabled = true;
+                AppState.elements.saveLink.innerHTML = `
+                    <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Guardando...
+                `;
+                
+                // Simular delay para mejor UX
+                setTimeout(() => {
+                    const result = LinkManager.addLink(linkData);
+                    
+                    if (result.success) {
+                        ToastSystem.show(`Enlace "${linkData.name}" añadido correctamente`, 'success');
+                        this.hideAddLinkModal();
+                        
+                        // Cambiar a la categoría del nuevo enlace si no está en "all"
+                        if (AppState.activeCategory !== 'all' && AppState.activeCategory !== linkData.category) {
+                            this.setActiveCategory(linkData.category);
+                        }
+                    } else {
+                        ToastSystem.show(result.error, 'error');
+                    }
+                    
+                    // Restaurar botón
+                    AppState.elements.saveLink.disabled = false;
+                    AppState.elements.saveLink.innerHTML = `
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Añadir Enlace
+                    `;
+                }, 500);
+            },
+            
+            // Actualizar vista previa de URL
+            updateUrlPreview(url) {
+                if (!url || !Utils.isValidUrl(url)) {
+                    AppState.elements.urlPreview.classList.add('hidden');
+                    return;
+                }
+                
+                try {
+                    const urlObj = new URL(url);
+                    const domain = urlObj.hostname.replace('www.', '');
+                    
+                    AppState.elements.previewUrl.textContent = Utils.truncateUrl(url, 50);
+                    AppState.elements.previewDomain.textContent = `Dominio: ${domain}`;
+                    AppState.elements.urlPreview.classList.remove('hidden');
+                } catch (error) {
+                    AppState.elements.urlPreview.classList.add('hidden');
+                }
+            },
+            
+            // Validar formulario en tiempo real
+            validateForm() {
+                const name = AppState.elements.linkName.value.trim();
+                const url = AppState.elements.linkUrl.value.trim();
+                const category = AppState.elements.linkCategory.value;
+                
+                const isValid = name && 
+                               name.length <= 50 && 
+                               url && 
+                               Utils.isValidUrl(url) && 
+                               category;
+                
+                AppState.elements.saveLink.disabled = !isValid;
+                
+                // Feedback visual en campos
+                this.updateFieldValidation('linkName', name && name.length <= 50);
+                this.updateFieldValidation('linkUrl', url && Utils.isValidUrl(url));
+                this.updateFieldValidation('linkCategory', category);
+            },
+            
+            // Actualizar validación visual de campos
+            updateFieldValidation(fieldId, isValid) {
+                const field = document.getElementById(fieldId);
+                if (!field) return;
+                
+                field.classList.remove('border-red-500', 'border-green-500');
+                
+                if (field.value.trim()) {
+                    if (isValid) {
+                        field.classList.add('border-green-500');
+                    } else {
+                        field.classList.add('border-red-500');
+                    }
+                }
+            }
+        };
+
+        // ============================================================================
+        // SISTEMA DE INICIALIZACIÓN
+        // ============================================================================
+        
+        const App = {
+            // Inicialización principal de la aplicación
+            async init() {
+                try {
+                    console.log('🚀 Iniciando Link Manager...');
+                    
+                    // Cargar enlaces guardados
+                    LinkManager.loadFromStorage();
+                    
+                    // Inicializar estado
+                    AppState.init();
+                    
+                    // Configurar eventos
+                    EventSystem.init();
+                    
+                    // Restaurar estado de la UI
+                    this.restoreUIState();
+                    
+                    // Renderizado inicial
+                    FilterSystem.applyFilters();
+                    
+                    // Configurar actualizaciones periódicas
+                    this.setupPeriodicUpdates();
+                    
+                    console.log('✅ Link Manager iniciado correctamente');
+                    
+                    // Mostrar mensaje de bienvenida
+                    setTimeout(() => {
+                        ToastSystem.show('Link Manager listo para usar', 'success');
+                    }, 500);
+                    
+                } catch (error) {
+                    console.error('❌ Error al inicializar Link Manager:', error);
+                    ToastSystem.show('Error al inicializar la aplicación', 'error');
+                }
+            },
+            
+            // Restaurar estado de la UI desde localStorage
+            restoreUIState() {
+                // Restaurar búsqueda
+                AppState.elements.searchInput.value = AppState.searchQuery;
+                
+                // Restaurar categoría activa
+                AppState.elements.categoryButtons.forEach(btn => {
+                    const isActive = btn.dataset.category === AppState.activeCategory;
+                    btn.classList.toggle('active', isActive);
+                    btn.setAttribute('aria-selected', isActive);
+                });
+            },
+            
+            // Configurar actualizaciones periódicas
+            setupPeriodicUpdates() {
+                // Actualizar timestamp cada minuto
+                setInterval(() => {
+                    AppState.elements.lastUpdate.textContent = Utils.formatDate();
+                }, 60000);
+            },
+            
+            // Método para inyectar datos (Fase 2)
+            injectLinks(linksArray) {
+                console.log('📊 Inyectando datos de enlaces...');
+                
+                // Validar formato de datos
+                if (!Array.isArray(linksArray)) {
+                    console.error('❌ Los datos deben ser un array');
+                    return false;
+                }
+                
+                // Validar estructura de cada enlace
+                const validLinks = linksArray.filter(link => {
+                    return link && 
+                           typeof link.name === 'string' && 
+                           typeof link.url === 'string' && 
+                           typeof link.cat === 'string' &&
+                           link.name.trim() && 
+                           link.url.trim() && 
+                           link.cat.trim();
+                });
+                
+                if (validLinks.length !== linksArray.length) {
+                    console.warn(`⚠️ ${linksArray.length - validLinks.length} enlaces inválidos fueron filtrados`);
+                }
+                
+                // Actualizar datos globales
+                LINKS.length = 0; // Limpiar array existente
+                LINKS.push(...validLinks);
+                
+                // Re-aplicar filtros y renderizar
+                FilterSystem.applyFilters();
+                
+                console.log(`✅ ${validLinks.length} enlaces cargados correctamente`);
+                ToastSystem.show(`${validLinks.length} enlaces cargados`, 'success');
+                
+                return true;
+            }
+        };
+
+        // ============================================================================
+        // INICIALIZACIÓN AUTOMÁTICA
+        // ============================================================================
+        
+        // Inicializar cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => App.init());
+        } else {
+            App.init();
+        }
+
+        // Exponer API global para la fase 2
+        window.LinkManager = {
+            injectLinks: App.injectLinks.bind(App),
+            getState: () => ({ ...AppState }),
+            clearData: () => {
+                LINKS.length = 0;
+                FilterSystem.applyFilters();
+            }
+        };
+
+        // ============================================================================
+        // MANEJO DE ERRORES GLOBALES
+        // ============================================================================
+        
+        window.addEventListener('error', (event) => {
+            console.error('❌ Error global capturado:', event.error);
+            ToastSystem.show('Se produjo un error inesperado', 'error');
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('❌ Promise rechazada:', event.reason);
+            ToastSystem.show('Error en operación asíncrona', 'error');
+        });
+
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9725018db13546d3',t:'MTc1NTcyNTU3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
